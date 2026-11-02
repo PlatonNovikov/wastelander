@@ -12,24 +12,38 @@ use ratatui::{
 };
 
 use crate::{Player};
+use crate::game::{Game};
 use crate::ui::{Screen, PlayerCreation};
 
-struct App<T: Screen> {
-    player: Option<Player>,
-    screen: T,
+pub struct App {
+    game: Game,
+    screen: Box<dyn Screen>,
 }
 
-impl<T: Screen> Default for App<T> {
-    fn default<T>() -> Self {
+impl Default for App {
+    fn default() -> Self {
         Self {
-            player: None,
-            screen: PlayerCreation,
+            game: Game::default(),
+            screen: Box::new(PlayerCreation::default()),
         }
     }
 }
 
-impl<T: Screen> App<T> {
+impl App {
     pub fn run(&mut self, terminal: &mut DefaultTerminal) -> io::Result<()> {
-        
+        loop {
+            terminal.draw(|frame| self.screen.draw(frame))?;
+            self.handle_events()?;
+        }
+    }
+
+    fn handle_events(&mut self) -> io::Result<()> {
+        match event::read()? {
+            Event::Key(key_event) if key_event.kind == KeyEventKind::Press => {
+                self.screen.handle_input(key_event);
+            }
+            _ => {}
+        };
+        Ok(())
     }
 }

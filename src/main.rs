@@ -2,6 +2,7 @@ use ratatui::{DefaultTerminal, Frame};
 
 mod ui; 
 mod app;
+mod game;
 
 use crate::app::{App};
 
@@ -25,6 +26,34 @@ impl Default for Special {
 			intelligence: 5,
 			agility: 5,
 			luck: 5
+		}
+	}
+}
+
+impl Special {
+	fn id_get(&self, id: usize) -> Option<i8> {
+		match id {
+			0 => Some(self.strenght),
+			1 => Some(self.perception),
+			2 => Some(self.endurance),
+			3 => Some(self.charisma),
+			4 => Some(self.intelligence),
+			5 => Some(self.agility),
+			6 => Some(self.luck),
+			_ => None,
+		}
+	}
+
+	fn id_get_mut(&mut self, id: usize) -> Option<&mut i8> {
+		match id {
+			0 => Some(&mut self.strenght),
+			1 => Some(&mut self.perception),
+			2 => Some(&mut self.endurance),
+			3 => Some(&mut self.charisma),
+			4 => Some(&mut self.intelligence),
+			5 => Some(&mut self.agility),
+			6 => Some(&mut self.luck),
+			_ => None,
 		}
 	}
 }
@@ -75,42 +104,8 @@ struct Player {
 	skills: Skills,
 }
 
-fn select_special() -> Special {
-	let mut special = Special::default();
-	let mut selected: i8 = 0;
-	loop {
-		clearscreen::clear().expect("failed to clear screen");
-		print!("Select your special stats:\n\n")
-
-		for i in 0..7 {
-			if selected == i {
-				print!("> ");
-			} else {
-				print!("  ");
-			}
-			match i {
-				0 => println!("strenght {}", special.strenght),
-				1 => println!("perception {}", special.perception),
-				2 => println!("endurance {}", special.endurance),
-				3 => println!("charisma {}", special.charisma),
-				4 => println!("intelligence {}", special.intelligence),
-				5 => println!("agility {}", special.agility),
-				6 => println!("luck {}", special.luck),
-				_ => {}
-			}
-		}
-	}
-	special
-}
-
-fn make_player() -> Player {
-
-	Skills::default().calc_skills(special);
-
-}
-
 fn main() -> color_eyre::Result<()> {
 	color_eyre::install()?;
-	ratatui::run(|terminal| App::default().run(terminal));
+	let _ = ratatui::run(|terminal| App::default().run(terminal));
 	Ok(())
 }
