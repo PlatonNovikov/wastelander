@@ -1,11 +1,12 @@
 use ratatui::{DefaultTerminal, Frame};
 
-mod ui; 
+mod screen; 
 mod app;
 mod game;
 
 use crate::app::{App};
 
+#[derive(Copy, Clone)]
 struct Special {
 	strenght: i8,
 	perception: i8,
@@ -58,7 +59,7 @@ impl Special {
 	}
 }
 
-#[derive(Default)]
+#[derive(Default, Copy, Clone)]
 struct Skills {
 	barter: i16,
 	e_weapons: i16, //energy weapons
@@ -94,6 +95,44 @@ impl Skills {
 			speech: calc(special.charisma),
 			survival: calc(special.endurance),
 			unarmed: calc(special.endurance),
+		}
+	}
+
+	fn id_get(&self, id: usize) -> Option<i16> {
+		match id {
+			0 => Some(self.barter),
+			1 => Some(self.e_weapons),
+			2 => Some(self.explosives),
+			3 => Some(self.guns),
+			4 => Some(self.lockpick),
+			5 => Some(self.medicine),
+			6 => Some(self.m_weapons),
+			7 => Some(self.repair),
+			8 => Some(self.science),
+			9 => Some(self.sneak),
+			10 => Some(self.speech),
+			11 => Some(self.survival),
+			12 => Some(self.unarmed),
+			_ => None
+		}
+	}
+
+	fn id_get_mut(&mut self, id: usize) -> Option<&mut i16> {
+		match id {
+			0 => Some(&mut self.barter),
+			1 => Some(&mut self.e_weapons), 
+			2 => Some(&mut self.explosives),
+			3 => Some(&mut self.guns),
+			4 => Some(&mut self.lockpick),
+			5 => Some(&mut self.medicine),
+			6 => Some(&mut self.m_weapons),
+			7 => Some(&mut self.repair),
+			8 => Some(&mut self.science),
+			9 => Some(&mut self.sneak),
+			10 => Some(&mut self.speech),
+			11 => Some(&mut self.survival),
+			12 => Some(&mut self.unarmed),
+			_ => None
 		}
 	}
 }

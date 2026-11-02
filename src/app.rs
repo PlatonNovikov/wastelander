@@ -13,7 +13,7 @@ use ratatui::{
 
 use crate::{Player};
 use crate::game::{Game};
-use crate::ui::{Screen, PlayerCreation};
+use crate::screen::{Screen, PlayerCreation, ScreenReturn};
 
 pub struct App {
     game: Game,
@@ -40,7 +40,14 @@ impl App {
     fn handle_events(&mut self) -> io::Result<()> {
         match event::read()? {
             Event::Key(key_event) if key_event.kind == KeyEventKind::Press => {
-                self.screen.handle_input(key_event);
+                match self.screen.handle_input(key_event) {
+                    ScreenReturn::ChangeScreen(screen) => self.screen = screen,
+                    ScreenReturn::CreatedPlayer(player) => {
+                        self.game.player = Some(player);
+                        todo!();
+                    },
+                    ScreenReturn::None => {}
+                }
             }
             _ => {}
         };

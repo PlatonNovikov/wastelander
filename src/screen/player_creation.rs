@@ -1,23 +1,16 @@
-use std::{any::Any, hint::select_unpredictable};
-
+use crossterm::event::{self, Event, KeyCode, KeyEvent, KeyEventKind, KeyModifiers};
 use ratatui::{
-    Frame,
-    widgets::{Block, Borders, List, ListItem, Paragraph},
+    buffer::Buffer,
+    layout::Rect,
+    style::Stylize,
+    symbols::border,
+    text::{Line, Text},
+    widgets::{Block, Paragraph, Widget, Borders, List, ListItem},
+    DefaultTerminal, Frame,
 };
-use crossterm::event::{self, KeyEvent, KeyCode, KeyModifiers};
 
-use crate::{Player, Skills, Special};
-
-pub trait Screen {
-    fn draw(&self, frame: &mut Frame);
-    fn handle_input(&mut self, key: KeyEvent) -> ScreenReturn;
-}
-
-pub enum ScreenReturn {
-    None,
-    ChangeScreen(Box<dyn Screen>),
-    CreatedPlayer(Player),
-}
+use super::{Screen, ScreenReturn};
+use crate::{Player, Special, Skills};
 
 #[derive(Default)]
 enum CreationState {
@@ -26,7 +19,6 @@ enum CreationState {
 
     Special,
     Skills,
-    Done,
 }
 
 #[derive(Default)]
@@ -38,6 +30,8 @@ pub struct PlayerCreation {
 
     select: usize,
     points: i8,
+
+    selected_skills: Vec<usize>,
 }
 
 impl Screen for PlayerCreation {
@@ -45,8 +39,7 @@ impl Screen for PlayerCreation {
         match self.state {
             CreationState::Name => self.name_draw(frame),
             CreationState::Special => self.special_draw(frame),
-            CreationState::Skills => todo!(),
-            CreationState::Done => todo!()
+            CreationState::Skills => self.skills_draw(frame),
         }
     }
 
@@ -54,8 +47,7 @@ impl Screen for PlayerCreation {
         match self.state {
             CreationState::Name => self.name_input(key),
             CreationState::Special => self.special_input(key),
-            CreationState::Skills => todo!(),
-            CreationState::Done => todo!()
+            CreationState::Skills => return self.skills_input(key),
         };
         ScreenReturn::None
     }
@@ -106,7 +98,7 @@ impl PlayerCreation {
             }
 
             KeyCode::Right => {
-                let stat: &mut i8 = &mut self.special.id_get_mut(self.select).unwrap();
+                let stat: &mut i8 = self.special.id_get_mut(self.select).unwrap();
                 if *stat < 10 && self.points > 0 {
                     *stat += 1;
                     self.points -= 1;
@@ -169,10 +161,10 @@ impl PlayerCreation {
         frame.render_widget(list, frame.area());
     }
 
-    fn skills_input(&mut self, key: KeyEvent) {
+    fn skills_input(&mut self, key: KeyEvent) -> ScreenReturn {
         match key.code {
             KeyCode::Down => {
-                if self.select < 6 {
+                if self.select < 12 {
                     self.select += 1;
                 }
             }
@@ -183,65 +175,77 @@ impl PlayerCreation {
                 }
             }
 
-            KeyCode::Right => {
-                let stat: &mut i8 = &mut self.special.id_get_mut(self.select).unwrap();
-                if *stat < 10 && self.points > 0 {
-                    *stat += 1;
-                    self.points -= 1;
-                } 
-            }
-
-            KeyCode::Left => {
-                let stat: &mut i8 = self.special.id_get_mut(self.select).unwrap();
-                if *stat > 1 {
-                    *stat -= 1;
-                    self.points += 1;
-                } 
+            KeyCode::Char(c) => {
+                match c {
+                    ' ' => {
+                        if self.points > 0 && !self.selected_skills.contains(&self.select) {
+                            self.points -= 1;
+                            *self.skills.id_get_mut(self.select).unwrap() += 15;
+                            self.selected_skills.push(self.select);
+                        }
+                        else if self.selected_skills.contains(&self.select){
+                            self.points += 1;
+                            *self.skills.id_get_mut(self.select).unwrap() -= 15;
+                            self.selected_skills.retain(|val| *val != self.select);
+                        }
+                    }
+                    _ => {}
+                }
             }
 
             KeyCode::Enter => {
                 if self.points == 0 {
-                    self.select = 0;
-                    self.points = 3;
-                    self.skills = Skills::from_special(&self.special);
-                    self.state = CreationState::Skills;
+                    return ScreenReturn::CreatedPlayer(Player {
+                        name: self.name.clone(),
+                        special: self.special,
+                        skills: self.skills
+                    });
                 }
             }
             _ => {}
         }
+        ScreenReturn::None
     }
 
     fn skills_draw(&self, frame: &mut Frame) {
         let names = [
-            "Strength",
-            "Perception",
-            "Endurance",
-            "Charisma",
-            "Intelligence",
-            "Agility",
-            "Luck",
+            "barter",
+	        "e_weapons",
+	        "explosives",
+	        "guns",
+	        "lockpick",
+	        "medicine",
+	        "m_weapons",
+	        "repair",
+	        "science",
+	        "sneak",
+	        "speech",
+	        "survival",
+	        "unarmed",
         ];
 
         let items: Vec<ListItem> = names
-            .iter()
-            .enumerate()
-            .map(|(i, name)| {
-                let value = self.special.id_get(i).unwrap();
+        .iter()
+        .enumerate()
+        .map(|(i, name)| {
+            let value = self.skills.id_get(i).unwrap();
 
-                let prefix = if i == self.select {
-                    "> "
-                } else {
-                    "  "
-                };
+            let cursor = if i == self.select { ">" } else { " " };
+            let picked = if self.selected_skills.contains(&i) { "*" } else { " " };
 
-                ListItem::new(format!("{prefix}{name:<13} {value}"))
-            })
-            .collect();
+            ListItem::new(format!(
+                "{cursor} [{picked}] {name:<16} {value}"
+            ))
+        })
+        .collect();
 
         let list = List::new(items).block(
             Block::default()
-                .title(format!("SPECIAL ({} points left)", self.points))
-                .borders(Borders::ALL),
+            .title(format!(
+                "Tag Skills ({} left)",
+                self.points
+            ))
+            .borders(Borders::ALL),
         );
 
         frame.render_widget(list, frame.area());
