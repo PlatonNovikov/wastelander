@@ -13,7 +13,8 @@ use ratatui::{
 
 use crate::{Player};
 use crate::game::{Game};
-use crate::ui::{Screen, PlayerCreation, ScreenReturn, MainMenu};
+use crate::ui::{Screen, PlayerCreation, ScreenReturn, MainMenu, DialogueScreen};
+use crate::dialogue::{Dialogue, load_dialogue};
 
 pub struct App {
     game: Game,
@@ -58,7 +59,8 @@ impl App {
                     }
                     ScreenReturn::CreatedPlayer(player) => {
                         self.game.player = Some(player);
-                        todo!();
+                        self.screen.pop();
+                        self.screen.push(Box::new(DialogueScreen::new("src/dialogue/dialogues/test.toml")));
                     },
                     ScreenReturn::Exit => {exit(0)}
                     ScreenReturn::None => {}

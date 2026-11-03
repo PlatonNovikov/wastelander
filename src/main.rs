@@ -3,6 +3,7 @@ use ratatui::{DefaultTerminal, Frame};
 mod ui; 
 mod app;
 mod game;
+mod dialogue;
 
 use crate::app::{App};
 

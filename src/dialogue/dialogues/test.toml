@@ -7,7 +7,7 @@ text = "Hello! I'm a dummy! :D"
 
     [[start.answers]]
     text = "GFY"
-    next = "gfy
+    next = "gfy"
 
 # -------------------------------------
 
