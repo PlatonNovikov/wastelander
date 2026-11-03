@@ -9,6 +9,14 @@ pub trait Screen {
 
 pub enum ScreenReturn {
     None,
-    ChangeScreen(Box<dyn Screen>),
+    PushScreen(Box<dyn Screen>),
+    ReplaceScreen(Box<dyn Screen>),
+    PopScreen,
     CreatedPlayer(Player),
+    Exit,
+}
+
+pub trait SubScreen<T> {
+    fn draw(&self, frame: &mut Frame);
+    fn handle_input(&mut self, key: KeyEvent) -> T;
 }

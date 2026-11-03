@@ -1,0 +1,25 @@
+[start]
+text = "Hello! I'm a dummy! :D"
+
+    [[start.answers]]
+    text = "Cool :D"
+    next = "chill"
+
+    [[start.answers]]
+    text = "GFY"
+    next = "gfy
+
+# -------------------------------------
+
+[chill]
+text = "yeah"
+end = true
+
+# -------------------------------------
+
+[gfy]
+text = "why did you say that? :("
+
+    [[gfy.answers]]
+    text = "sry"
+    end = true

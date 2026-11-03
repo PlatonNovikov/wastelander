@@ -1,6 +1,6 @@
 use ratatui::{DefaultTerminal, Frame};
 
-mod screen; 
+mod ui; 
 mod app;
 mod game;
 
@@ -32,6 +32,16 @@ impl Default for Special {
 }
 
 impl Special {
+	const SPECIAL_NAMES: [&str; 7] = [
+            "Strength",
+            "Perception",
+            "Endurance",
+            "Charisma",
+            "Intelligence",
+            "Agility",
+            "Luck",
+    ];
+	
 	fn id_get(&self, id: usize) -> Option<i8> {
 		match id {
 			0 => Some(self.strenght),
@@ -77,6 +87,22 @@ struct Skills {
 }
 
 impl Skills {
+	const SKILLS_NAMES: [&str; 13] = [
+            "barter",
+	        "e_weapons",
+	        "explosives",
+	        "guns",
+	        "lockpick",
+	        "medicine",
+	        "m_weapons",
+	        "repair",
+	        "science",
+	        "sneak",
+	        "speech",
+	        "survival",
+	        "unarmed",
+        ];
+
 	fn from_special(special: &Special) -> Self {
 		let calc = |stat: i8| -> i16 {
 			(2 + (2 * stat) + (special.luck + 1) / 2).into()
