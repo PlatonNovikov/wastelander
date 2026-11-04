@@ -1,3 +1,13 @@
 [start]
-text = "You are lying on the floor of what is quite obviously a shitty hotel room.The faded, yellowish wallpaper, decorated with a floral pattern, is peeling away from the walls in several places. There are no windows, which makes the room feel particularly oppressive. The floor is littered with rubbish: food packaging, several empty bottles whose former contents are impossible to identify, and a few empty inhalers. A sweet, enticing smell emanates from them, and focusing on it sends a slight rush of adrenaline through your bloodstream.Ahead of you is a partially open door, through which light spills — the only visible source of light in the room."
+text = """
+You are lying on the floor of what is quite obviously a shitty hotel room.
+
+The faded, yellowish wallpaper, decorated with a floral pattern, is peeling away from the walls in several places. There are no windows, which makes the room feel particularly oppressive. The floor is littered with rubbish: food packaging, several empty bottles whose former contents are impossible to identify, and a few empty inhalers. A sweet, enticing smell emanates from them, and focusing on it sends a slight rush of adrenaline through your bloodstream.
+
+Ahead of you is a partially open door, through which light spills — the only visible source of light in the room.
+"""
 end = true
+
+    [[start.answers]]
+    text = "Stand up"
+    end = true
