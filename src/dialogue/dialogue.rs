@@ -91,7 +91,7 @@ impl Condition {
             ("==", Op::Eq),
             ("!=", Op::Ne),
             (">", Op::Gt),
-            ("<", Op::Lt)
+            ("<", Op::Lt),
         ];
 
         const VALID_STATS: [&str; 20] = [
@@ -121,14 +121,16 @@ impl Condition {
             .find_map(|(operator, op)| {
                 let (stat, value) = condition.split_once(operator)?;
                 Some((stat, op, value))
-            }).ok_or(std::io::Error::other("invalid"))?;
+            }).ok_or(std::io::Error::other("failed on parsing"))?;
 
-            if !VALID_STATS.contains(&stat.to_string().to_lowercase().as_str()) {
-                Err(std::io::Error::other("invalid"))?;
+            let stat = stat.trim().to_string().to_lowercase();
+
+            if !VALID_STATS.contains(&stat.as_str()) {
+                Err(std::io::Error::other(format!("invalid stat given: {}", stat)))?;
             }
 
             Ok(Check {
-                stat: stat.trim().to_string(),
+                stat,
                 op: op.clone(),
                 value: value.trim().parse()?
             })

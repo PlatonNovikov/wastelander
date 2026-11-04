@@ -11,7 +11,7 @@ text = "Hello! I'm a dummy! :D"
 
     [[start.answers]]
     text = "this is a skill check"
-    condition = "strength > 5"
+    condition = "strength >= 5"
     next = "strength"
 
 # -------------------------------------
