@@ -10,7 +10,7 @@ use ratatui::{
 };
 
 use super::{Screen, ScreenReturn};
-use crate::{Player, Skills, Special, ui::screen::SubScreen};
+use crate::{Player, Skills, Special, game::Game, ui::{DialogueScreen, screen::SubScreen}};
 
 enum SubScreenResult {
     None,
@@ -38,11 +38,11 @@ impl Default for PlayerCreation {
 }
 
 impl Screen for PlayerCreation {
-    fn draw(&self, frame: &mut Frame) {
+    fn draw(&self, frame: &mut Frame, _game: &Game) {
         self.submenu.draw(frame);
     }
 
-    fn handle_input(&mut self, key: KeyEvent) -> ScreenReturn {
+    fn handle_input(&mut self, key: KeyEvent, game: &mut Game) -> ScreenReturn {
         match self.submenu.handle_input(key) {
             SubScreenResult::None => {},
             SubScreenResult::Name(name) => {
@@ -54,11 +54,13 @@ impl Screen for PlayerCreation {
                 self.submenu = Box::new(SkillsCreation::default());
             }
             SubScreenResult::Skills(skills) => {
-                return ScreenReturn::CreatedPlayer(Player {
+                game.player = Some(Player {
                     name: self.name.clone(),
                     special: self.special,
-                    skills,
+                    skills
                 });
+                let next = Box::new(DialogueScreen::new("src/dialogue/dialogues/start.toml"));
+                return ScreenReturn::ReplaceScreen(next);
             }
         }
         return ScreenReturn::None

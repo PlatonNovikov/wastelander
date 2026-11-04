@@ -4,7 +4,7 @@ use ratatui::{
     widgets::{Block, Borders, List, ListItem},
 };
 
-use crate::ui::{Screen, ScreenReturn};
+use crate::{game::Game, ui::{Screen, ScreenReturn, TodoScreen}};
 use crate::ui::PlayerCreation;
 
 #[derive(Default)]
@@ -13,7 +13,7 @@ pub struct MainMenu {
 }
 
 impl Screen for MainMenu {
-    fn draw(&self, frame: &mut Frame) {
+    fn draw(&self, frame: &mut Frame, _game: &Game) {
         let items = [
             "New Game",
             "Load Game",
@@ -46,7 +46,7 @@ impl Screen for MainMenu {
     }
 
 
-    fn handle_input(&mut self, key: KeyEvent) -> ScreenReturn {
+    fn handle_input(&mut self, key: KeyEvent, _game: &mut Game) -> ScreenReturn {
         match key.code {
             KeyCode::Down => {
                 if self.selected < 3 {
@@ -68,6 +68,17 @@ impl Screen for MainMenu {
                         );
                     }
 
+                    1 => {
+                        return ScreenReturn::PushScreen(
+                            Box::new(TodoScreen::default())
+                        );
+                    }
+
+                    2 => {
+                        return ScreenReturn::PushScreen(
+                            Box::new(TodoScreen::default())
+                        );
+                    }
                     3 => {
                         return ScreenReturn::Exit;
                     }

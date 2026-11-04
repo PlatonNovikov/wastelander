@@ -9,7 +9,8 @@ use ratatui::{
     DefaultTerminal, Frame,
 };
 
-use crate::dialogue::{self, Dialogue, Node, load_dialogue};
+use crate::{Player, dialogue::{self, Dialogue, Node, load_dialogue}};
+use crate::game::Game;
 
 use super::{Screen, ScreenReturn};
 
@@ -20,7 +21,7 @@ pub struct DialogueScreen {
 }
 
 impl Screen for DialogueScreen {
-    fn draw(&self, frame: &mut Frame) {
+    fn draw(&self, frame: &mut Frame, game: &Game) {
         let node = self.current_node();
 
         let mut items = Vec::new();
@@ -59,7 +60,7 @@ impl Screen for DialogueScreen {
         frame.render_widget(list, frame.area());
     }
 
-    fn handle_input(&mut self, key: KeyEvent) -> ScreenReturn {
+    fn handle_input(&mut self, key: KeyEvent, _game: &mut Game) -> ScreenReturn {
         let answers_len = self.current_node().answers.len();
 
         match key.code {
@@ -100,7 +101,7 @@ impl DialogueScreen {
         let dialogue = load_dialogue(dialogue_file).unwrap();
         Self { dialogue, 
             current: String::from("start"),
-            selected: 0 
+            selected: 0
         }
     }
 

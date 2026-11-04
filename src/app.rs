@@ -33,19 +33,15 @@ impl Default for App {
 impl App {
     pub fn run(&mut self, terminal: &mut DefaultTerminal) -> io::Result<()> {
         loop {
-            terminal.draw(|frame| self.last_screen().draw(frame))?;
+            terminal.draw(|frame| self.screen.last().unwrap().draw(frame, &self.game))?;
             self.handle_events()?;
         }
-    }
-    
-    fn last_screen(&mut self) -> &mut Box<dyn Screen> {
-        self.screen.last_mut().unwrap()
     }
 
     fn handle_events(&mut self) -> io::Result<()> {
         match event::read()? {
             Event::Key(key_event) if key_event.kind == KeyEventKind::Press => {
-                match self.last_screen().handle_input(key_event) {
+                match self.screen.last_mut().unwrap().handle_input(key_event, &mut self.game) {
                     ScreenReturn::PushScreen(screen) => self.screen.push(screen),
                     ScreenReturn::ReplaceScreen(screen) => {
                         let _ = self.screen.pop();
@@ -53,15 +49,7 @@ impl App {
                     }
                     ScreenReturn::PopScreen => {
                         self.screen.pop();
-                        if self.screen.len() == 0 {
-                            exit(0);
-                        }
                     }
-                    ScreenReturn::CreatedPlayer(player) => {
-                        self.game.player = Some(player);
-                        self.screen.pop();
-                        self.screen.push(Box::new(DialogueScreen::new("src/dialogue/dialogues/test.toml")));
-                    },
                     ScreenReturn::Exit => {exit(0)}
                     ScreenReturn::None => {}
                 }

@@ -9,10 +9,24 @@ text = "Hello! I'm a dummy! :D"
     text = "GFY"
     next = "gfy"
 
+    [[start.answers]]
+    text = "this is a skill check"
+    condition = "strength > 5"
+    next = strength
+
 # -------------------------------------
 
 [chill]
 text = "yeah"
+
+    [[chill.answers]]
+    text = "..."
+    next = "silence"
+
+# -------------------------------------
+
+[silence]
+text = "..."
 end = true
 
 # -------------------------------------
@@ -22,4 +36,12 @@ text = "why did you say that? :("
 
     [[gfy.answers]]
     text = "sry"
+    end = true
+
+# -------------------------------------
+
+[strength]
+
+    [[strength.answers]]
+    text = "wow"
     end = true

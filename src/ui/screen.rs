@@ -1,10 +1,10 @@
 use crossterm::event::{KeyEvent};
 use ratatui::{Frame};
-use crate::{Player};
+use crate::{Player, game::Game};
 
 pub trait Screen {
-    fn draw(&self, frame: &mut Frame);
-    fn handle_input(&mut self, key: KeyEvent) -> ScreenReturn;
+    fn draw(&self, frame: &mut Frame, game: &Game);
+    fn handle_input(&mut self, key: KeyEvent, game: &mut Game) -> ScreenReturn;
 }
 
 pub enum ScreenReturn {
@@ -12,7 +12,6 @@ pub enum ScreenReturn {
     PushScreen(Box<dyn Screen>),
     ReplaceScreen(Box<dyn Screen>),
     PopScreen,
-    CreatedPlayer(Player),
     Exit,
 }
 
