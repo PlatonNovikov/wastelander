@@ -48,7 +48,7 @@ impl Screen for DialogueScreen {
         frame.render_widget(Paragraph::new(lines), answers_area);
     }
 
-    fn handle_input(&mut self, key: KeyEvent, _game: &mut Game) -> ScreenReturn {
+    fn handle_input(&mut self, key: KeyEvent, game: &mut Game) -> ScreenReturn {
         let answers_len = self.current_node().answers.len();
 
         match key.code {
@@ -65,7 +65,16 @@ impl Screen for DialogueScreen {
             }
 
             KeyCode::Enter => {
-                let answer = &self.current_node().answers[self.selected];
+                let Some(answer) = &self.current_node().answers.get(self.selected)
+                else {
+                    return ScreenReturn::PopScreen;
+                };
+
+                if let Some(check) = &answer.condition {
+                    if !check.check(game.player.as_ref().unwrap()) {
+                        return ScreenReturn::None;
+                    }
+                }
 
                 if answer.end {
                     return ScreenReturn::PopScreen;
@@ -87,7 +96,7 @@ impl Screen for DialogueScreen {
 impl DialogueScreen {
     pub fn new(dialogue_file: &str) -> Self {
         let dialogue = load_dialogue(dialogue_file).unwrap();
-        Self { dialogue, 
+        Self { dialogue,
             current: String::from("start"),
             selected: 0
         }

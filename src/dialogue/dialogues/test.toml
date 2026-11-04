@@ -12,7 +12,7 @@ text = "Hello! I'm a dummy! :D"
     [[start.answers]]
     text = "this is a skill check"
     condition = "strength > 5"
-    next = strength
+    next = "strength"
 
 # -------------------------------------
 
@@ -41,7 +41,8 @@ text = "why did you say that? :("
 # -------------------------------------
 
 [strength]
+text = "wow"
 
     [[strength.answers]]
-    text = "wow"
+    text = "*exit*"
     end = true

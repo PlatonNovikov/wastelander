@@ -51,7 +51,7 @@ impl Screen for PlayerCreation {
             }
             SubScreenResult::Special(special) => {
                 self.special = special;
-                self.submenu = Box::new(SkillsCreation::default());
+                self.submenu = Box::new(SkillsCreation::new(&special));
             }
             SubScreenResult::Skills(skills) => {
                 game.player = Some(Player {
@@ -59,7 +59,7 @@ impl Screen for PlayerCreation {
                     special: self.special,
                     skills
                 });
-                let next = Box::new(DialogueScreen::new("src/dialogue/dialogues/start.toml"));
+                let next = Box::new(DialogueScreen::new("src/dialogue/dialogues/test.toml"));
                 return ScreenReturn::ReplaceScreen(next);
             }
         }
@@ -111,10 +111,10 @@ struct SpecialCreation {
 
 impl Default for SpecialCreation {
     fn default() -> Self {
-        SpecialCreation { 
-            special: Special::default(), 
-            select: 0, 
-            points: 5 
+        SpecialCreation {
+            special: Special::default(),
+            select: 0,
+            points: 5
         }
     }
 }
@@ -167,7 +167,7 @@ impl SubScreen<SubScreenResult> for SpecialCreation {
                 if *stat < 10 && self.points > 0 {
                     *stat += 1;
                     self.points -= 1;
-                } 
+                }
             }
 
             KeyCode::Left => {
@@ -175,7 +175,7 @@ impl SubScreen<SubScreenResult> for SpecialCreation {
                 if *stat > 1 {
                     *stat -= 1;
                     self.points += 1;
-                } 
+                }
             }
 
             KeyCode::Enter => {
@@ -195,10 +195,10 @@ struct SkillsCreation {
     selected_skills: Vec<usize>,
 }
 
-impl Default for SkillsCreation {
-    fn default() -> Self {
+impl SkillsCreation {
+    fn new(special: &Special) -> Self {
         SkillsCreation {
-            skills: Skills::default(),
+            skills: Skills::from_special(special),
             select: 0,
             points: 3,
             selected_skills: Vec::new()
@@ -236,7 +236,7 @@ impl SubScreen<SubScreenResult> for SkillsCreation {
 
         frame.render_widget(list, frame.area());
     }
-        
+
     fn handle_input(&mut self, key: KeyEvent) -> SubScreenResult {
         match key.code {
             KeyCode::Down => {

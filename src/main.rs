@@ -1,6 +1,6 @@
 use ratatui::{DefaultTerminal, Frame};
 
-mod ui; 
+mod ui;
 mod app;
 mod game;
 mod dialogue;
@@ -42,7 +42,7 @@ impl Special {
             "Agility",
             "Luck",
     ];
-	
+
 	fn id_get(&self, id: usize) -> Option<i8> {
 		match id {
 			0 => Some(self.strenght),
@@ -65,6 +65,19 @@ impl Special {
 			4 => Some(&mut self.intelligence),
 			5 => Some(&mut self.agility),
 			6 => Some(&mut self.luck),
+			_ => None,
+		}
+	}
+
+	pub fn str_get(&self, name: &str) -> Option<i8> {
+		match name {
+			"strength" => Some(self.strenght),
+			"perception" => Some(self.perception),
+			"endurance" => Some(self.endurance),
+			"charisma" => Some(self.charisma),
+			"intelligence" => Some(self.intelligence),
+			"agility" => Some(self.agility),
+			"luck" => Some(self.luck),
 			_ => None,
 		}
 	}
@@ -147,7 +160,7 @@ impl Skills {
 	fn id_get_mut(&mut self, id: usize) -> Option<&mut i16> {
 		match id {
 			0 => Some(&mut self.barter),
-			1 => Some(&mut self.e_weapons), 
+			1 => Some(&mut self.e_weapons),
 			2 => Some(&mut self.explosives),
 			3 => Some(&mut self.guns),
 			4 => Some(&mut self.lockpick),
@@ -159,6 +172,25 @@ impl Skills {
 			10 => Some(&mut self.speech),
 			11 => Some(&mut self.survival),
 			12 => Some(&mut self.unarmed),
+			_ => None
+		}
+	}
+
+	pub fn str_get(&self, name: &str) -> Option<i16> {
+		match name {
+			"barter" => Some(self.barter),
+			"e_weapons" => Some(self.e_weapons),
+			"explosives" => Some(self.explosives),
+			"guns" => Some(self.guns),
+			"lockpick" => Some(self.lockpick),
+			"medicine" => Some(self.medicine),
+			"m_weapons" => Some(self.m_weapons),
+			"repair" => Some(self.repair),
+			"science" => Some(self.science),
+			"sneak" => Some(self.sneak),
+			"speech"  => Some(self.speech),
+			"survival"  => Some(self.survival),
+			"unarmed"  => Some(self.unarmed),
 			_ => None
 		}
 	}
