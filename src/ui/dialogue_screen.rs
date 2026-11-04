@@ -1,12 +1,10 @@
 use crossterm::event::{self, Event, KeyCode, KeyEvent, KeyEventKind, KeyModifiers};
 use ratatui::{
-    buffer::Buffer,
-    layout::Rect,
-    style::Stylize,
-    symbols::border,
-    text::{Line, Text},
-    widgets::{Block, Paragraph, Widget, Borders, List, ListItem},
-    DefaultTerminal, Frame,
+    layout::{Constraint, Layout},
+    style::{Modifier, Style},
+    text::Line,
+    widgets::{Block, Borders, Paragraph, Wrap},
+    Frame
 };
 
 use crate::{Player, dialogue::{self, Dialogue, Node, load_dialogue}};
@@ -21,43 +19,33 @@ pub struct DialogueScreen {
 }
 
 impl Screen for DialogueScreen {
-    fn draw(&self, frame: &mut Frame, game: &Game) {
+    fn draw(&self, frame: &mut Frame, _game: &Game) {
         let node = self.current_node();
 
-        let mut items = Vec::new();
+        let block = Block::default().title("Dialogue").borders(Borders::ALL);
+        let inner = block.inner(frame.area());
+        frame.render_widget(block, frame.area());
 
-        items.push(
-            ListItem::new(node.text.clone())
-        );
+        let [text_area, answers_area] = Layout::vertical([
+            Constraint::Min(3),
+            Constraint::Length(node.answers.len().max(1) as u16 + 1),
+        ])
+        .areas(inner);
 
-        items.push(
-            ListItem::new("")
-        );
+        let text = Paragraph::new(node.text.as_str()).wrap(Wrap { trim: true });
+        frame.render_widget(text, text_area);
 
-        for (i, answer) in node.answers.iter().enumerate() {
-            let cursor = if i == self.selected {
-                "> "
-            } else {
-                "  "
-            };
+        let lines: Vec<Line> = std::iter::once(Line::raw(""))
+            .chain(node.answers.iter().enumerate().map(|(i, a)| {
+                if i == self.selected {
+                    Line::styled(format!("> {}", a.text), Style::new().add_modifier(Modifier::BOLD))
+                } else {
+                    Line::raw(format!("  {}", a.text))
+                }
+            }))
+            .collect();
 
-            items.push(
-                ListItem::new(format!(
-                    "{}{}",
-                    cursor,
-                    answer.text
-                ))
-            );
-        }
-
-        let list = List::new(items)
-            .block(
-                Block::default()
-                    .title("Dialogue")
-                    .borders(Borders::ALL)
-            );
-
-        frame.render_widget(list, frame.area());
+        frame.render_widget(Paragraph::new(lines), answers_area);
     }
 
     fn handle_input(&mut self, key: KeyEvent, _game: &mut Game) -> ScreenReturn {
