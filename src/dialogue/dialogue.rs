@@ -4,7 +4,7 @@ use serde::Deserialize;
 use std::collections::HashMap;
 
 use crate::{
-    game::Player
+    game::{Player, VarMap}
 };
 
 #[derive(Debug, Deserialize)]

@@ -9,7 +9,7 @@ use ratatui::{
 
 use crate::{
     dialogue::{Dialogue, Node, load_dialogue}};
-use crate::game::Game;
+use crate::game::{Game, VarMap};
 
 use super::{Screen, ScreenReturn};
 
@@ -17,6 +17,8 @@ pub struct DialogueScreen {
     dialogue: Dialogue,
     current: String,
     selected: usize,
+    // local variables of this dialogue screen
+    locals: VarMap,
 }
 
 impl Screen for DialogueScreen {
