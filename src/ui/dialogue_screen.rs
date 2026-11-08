@@ -7,7 +7,8 @@ use ratatui::{
     Frame
 };
 
-use crate::{Player, dialogue::{self, Dialogue, Node, load_dialogue}};
+use crate::{
+    dialogue::{Dialogue, Node, load_dialogue}};
 use crate::game::Game;
 
 use super::{Screen, ScreenReturn};

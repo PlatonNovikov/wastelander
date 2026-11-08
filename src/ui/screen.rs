@@ -1,6 +1,8 @@
 use crossterm::event::{KeyEvent};
 use ratatui::{Frame};
-use crate::{Player, game::Game};
+use crate::{
+    game::*
+};
 
 pub trait Screen {
     fn draw(&self, frame: &mut Frame, game: &Game);

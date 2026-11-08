@@ -11,8 +11,7 @@ use ratatui::{
     DefaultTerminal, Frame,
 };
 
-use crate::{Player};
-use crate::game::{Game};
+use crate::game::{Game, Player};
 use crate::ui::{Screen, PlayerCreation, ScreenReturn, MainMenu, DialogueScreen};
 use crate::dialogue::{Dialogue, load_dialogue};
 

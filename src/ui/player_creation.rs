@@ -10,7 +10,10 @@ use ratatui::{
 };
 
 use super::{Screen, ScreenReturn};
-use crate::{Player, Skills, Special, game::Game, ui::{DialogueScreen, screen::SubScreen}};
+use crate::{
+    game::{Game, Player, Skills, Special},
+    ui::{DialogueScreen, screen::SubScreen}
+};
 
 enum SubScreenResult {
     None,
@@ -59,7 +62,7 @@ impl Screen for PlayerCreation {
                     special: self.special,
                     skills
                 });
-                let next = Box::new(DialogueScreen::new("src/dialogue/dialogues/test.toml"));
+                let next = Box::new(DialogueScreen::new("dialogues/test.toml"));
                 return ScreenReturn::ReplaceScreen(next);
             }
         }

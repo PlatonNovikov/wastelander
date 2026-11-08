@@ -3,7 +3,9 @@ use std::fs;
 use serde::Deserialize;
 use std::collections::HashMap;
 
-use crate::{Player};
+use crate::{
+    game::Player
+};
 
 #[derive(Debug, Deserialize)]
 pub struct Dialogue {
@@ -67,8 +69,7 @@ struct Check {
 
 impl Check {
     pub fn check(&self, player: &Player) -> bool {
-        let stat = player.skills.str_get(self.stat.as_str())
-        .unwrap_or(i16::from(player.special.str_get(self.stat.as_str()).unwrap()));
+        let stat = player.stat_str(self.stat.as_str()).unwrap();
         match self.op {
             Op::Gt => stat > self.value,
             Op::Ge => stat >= self.value,
