@@ -1,3 +1,5 @@
+use std::collections::HashMap;
+
 use crossterm::event::{self, Event, KeyCode, KeyEvent, KeyEventKind, KeyModifiers};
 use ratatui::{
     layout::{Constraint, Layout},
@@ -8,7 +10,8 @@ use ratatui::{
 };
 
 use crate::{
-    dialogue::{Dialogue, Node, load_dialogue}};
+    dialogue::{Dialogue, Node, load_dialogue}
+};
 use crate::game::{Game, VarMap};
 
 use super::{Screen, ScreenReturn};
@@ -68,13 +71,14 @@ impl Screen for DialogueScreen {
             }
 
             KeyCode::Enter => {
-                let Some(answer) = &self.current_node().answers.get(self.selected)
+                let node = self.dialogue.nodes.get(&self.current).unwrap();
+                let Some(answer) = node.answers.get(self.selected)
                 else {
                     return ScreenReturn::PopScreen;
                 };
 
                 if let Some(check) = &answer.condition {
-                    if !check.check(game.player.as_ref().unwrap()) {
+                    if !check.check(game.player.as_ref().unwrap(), &mut self.locals, &mut game.globals) {
                         return ScreenReturn::None;
                     }
                 }
@@ -99,9 +103,11 @@ impl Screen for DialogueScreen {
 impl DialogueScreen {
     pub fn new(dialogue_file: &str) -> Self {
         let dialogue = load_dialogue(dialogue_file).unwrap();
-        Self { dialogue,
+        Self { 
+            dialogue,
             current: String::from("start"),
-            selected: 0
+            selected: 0,
+            locals: HashMap::new(),
         }
     }
 

@@ -62,14 +62,40 @@ enum Op { Gt, Ge, Lt, Le, Eq, Ne }
 
 #[derive(Debug)]
 struct Check {
-    stat: String,
+    var: VarType,
     op: Op,
     value: i16,
 }
 
 impl Check {
-    pub fn check(&self, player: &Player) -> bool {
-        let stat = player.stat_str(self.stat.as_str()).unwrap();
+    fn get_var(&self, player: &Player, l_scope: &mut VarMap, g_scope: &mut VarMap) -> i16 {
+        match self.var {
+            VarType::Global(ref var_key) => {
+                match g_scope.get(var_key.as_str()) {
+                    None => {
+                        g_scope.insert(var_key.clone(), 0).unwrap()
+                    }
+                    Some(val) => *val
+                }
+            },
+
+            VarType::Local(ref var_key) => {
+                match l_scope.get(var_key.as_str()) {
+                    None => {
+                        l_scope.insert(var_key.clone(), 0).unwrap()
+                    }
+                    Some(val) => *val
+                }
+            },
+            
+            VarType::Stat(ref var_key) => {
+                player.stat_str(var_key.as_str()).unwrap()
+            },
+        }
+    }
+
+    pub fn check(&self, player: &Player, l_scope: &mut VarMap, g_scope: &mut VarMap) -> bool {
+        let stat = self.get_var(player, l_scope, g_scope);
         match self.op {
             Op::Gt => stat > self.value,
             Op::Ge => stat >= self.value,
@@ -82,19 +108,17 @@ impl Check {
 }
 
 #[derive(Debug)]
+enum VarType {
+    Stat(String),
+    Local(String),
+    Global(String),
+}
+
+#[derive(Debug)]
 pub struct Condition(Vec<Check>);
 
 impl Condition {
-    fn parse_condition(condition: &str) -> Result<Check, Box<dyn std::error::Error>> {
-        const OPERATORS: [(&str, Op); 6] = [
-            (">=", Op::Ge),
-            ("<=", Op::Le),
-            ("==", Op::Eq),
-            ("!=", Op::Ne),
-            (">", Op::Gt),
-            ("<", Op::Lt),
-        ];
-
+    fn parse_stat(stat: &str) -> Result<VarType, Box<dyn std::error::Error>> {
         const VALID_STATS: [&str; 20] = [
             "strength",
             "perception",
@@ -118,24 +142,50 @@ impl Condition {
 	        "unarmed",
         ];
 
-        let (stat, op, value) = OPERATORS.iter()
+        if !VALID_STATS.contains(&stat) {
+            Err(std::io::Error::other(format!("invalid stat given: {}", stat)))?;
+        }
+        Ok(VarType::Stat(stat.to_string()))
+    }
+
+    fn parse_variable(var: &str) -> Result<VarType, Box<dyn std::error::Error>> {
+        if var.starts_with("local.") {
+            return Ok(VarType::Local(var.to_string()));
+        }
+        if var.starts_with("global.") {
+            return Ok(VarType::Global(var.to_string()));
+        }
+        if var.contains(".") {
+            Err(std::io::Error::other(format!("invalid variable prefix given: {}", var)))?;
+        }
+        Self::parse_stat(var)
+    }
+
+    fn parse_condition(condition: &str) -> Result<Check, Box<dyn std::error::Error>> {
+        const OPERATORS: [(&str, Op); 6] = [
+            (">=", Op::Ge),
+            ("<=", Op::Le),
+            ("==", Op::Eq),
+            ("!=", Op::Ne),
+            (">", Op::Gt),
+            ("<", Op::Lt),
+        ];
+
+        let (var, op, value) = OPERATORS.iter()
             .find_map(|(operator, op)| {
-                let (stat, value) = condition.split_once(operator)?;
-                Some((stat, op, value))
+                let (var, value) = condition.split_once(operator)?;
+                Some((var, op, value))
             }).ok_or(std::io::Error::other("failed on parsing"))?;
 
-            let stat = stat.trim().to_string().to_lowercase();
-
-            if !VALID_STATS.contains(&stat.as_str()) {
-                Err(std::io::Error::other(format!("invalid stat given: {}", stat)))?;
-            }
+            let var = Self::parse_variable(var.trim())?;
 
             Ok(Check {
-                stat,
+                var,
                 op: op.clone(),
                 value: value.trim().parse()?
             })
     }
+
     pub fn parse(conditions_src: &str) -> Result<Condition, Box<dyn std::error::Error>> {
         let parsed: Vec<Check> = conditions_src.split("&&")
         .map(Self::parse_condition)
@@ -143,9 +193,9 @@ impl Condition {
         Ok(Condition(parsed))
     }
 
-    pub fn check(&self, player: &Player) -> bool {
+    pub fn check(&self, player: &Player, l_scope: &mut VarMap, g_scope: &mut VarMap) -> bool {
         !self.0.iter()
-        .map(|check| check.check(player))
+        .map(|check| check.check(player, l_scope, g_scope))
         .collect::<Vec<bool>>()
         .contains(&false)
     }

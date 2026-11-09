@@ -1,7 +1,7 @@
 use std::collections::HashMap;
 use toml::Value;
 
-pub type VarMap = HashMap<String, i32>;
+pub type VarMap = HashMap<String, i16>;
 
 #[derive(Default)]
 pub struct Game {
