@@ -55,6 +55,7 @@ pub fn load_dialogue(dialogue_file: &str) -> Result<Dialogue, Box<dyn std::error
                     .map_err(|e| format!("Node '{node_name}': {e}"))?;
                 answer.condition = Some(cond);
             }
+            answer.effects = Effect::parse(&answer.effects_src)?;
         }
     }
 
@@ -72,18 +73,9 @@ struct Check {
 }
 
 impl Check {
-    fn get_var(var: &VarType, player: &Player, locals: &mut VarMap, globals: &mut VarMap) -> i16 {
-        match var {
-            VarType::Global(k) => globals.get(k).copied().unwrap_or(0),
-            VarType::Local(k) => locals.get(k).copied().unwrap_or(0),
-            VarType::Stat(k) => player.stat_str(k.as_str()).unwrap(), // already validated
-            VarType::Num(n) => *n
-        }
-    }
-
     pub fn check(&self, player: &Player, locals: &mut VarMap, globals: &mut VarMap) -> bool {
-        let var_1 = Self::get_var(&self.var_1, player, locals, globals);
-        let var_2 = Self::get_var(&self.var_2, player, locals, globals);
+        let var_1 = VarType::get(&self.var_1, player, locals, globals);
+        let var_2 = VarType::get(&self.var_2, player, locals, globals);
 
         match self.op {
             Op::Gt => var_1 > var_2,
@@ -104,10 +96,23 @@ enum VarType {
     Num(i16),
 }
 
-#[derive(Debug)]
-pub struct Condition(Vec<Check>);
+impl VarType {
+    pub fn from_str(var: &str) -> Result<VarType, Box<dyn std::error::Error>> {
+        if var.starts_with("local.") {
+            return Ok(VarType::Local(var.to_string()));
+        }
+        if var.starts_with("global.") {
+            return Ok(VarType::Global(var.to_string()));
+        }
+        if var.contains(".") {
+            Err(std::io::Error::other(format!("invalid variable prefix given: {}", var)))?;
+        }
+        if let Ok(n) = var.parse::<i16>() {
+            return Ok(VarType::Num(n))
+        }
+        Self::parse_stat(var)
+    }
 
-impl Condition {
     fn parse_stat(stat: &str) -> Result<VarType, Box<dyn std::error::Error>> {
         const VALID_STATS: [&str; 20] = [
             "strength",
@@ -138,22 +143,29 @@ impl Condition {
         Ok(VarType::Stat(stat.to_string()))
     }
 
-    fn parse_variable(var: &str) -> Result<VarType, Box<dyn std::error::Error>> {
-        if var.starts_with("local.") {
-            return Ok(VarType::Local(var.to_string()));
+    pub fn get(&self, player: &Player, locals: &VarMap, globals: &VarMap) -> i16 {
+        match self {
+            VarType::Global(k) => globals.get(k).copied().unwrap_or(0),
+            VarType::Local(k) => locals.get(k).copied().unwrap_or(0),
+            VarType::Stat(k) => player.stat_str(k.as_str()).unwrap(), // should be already validated
+            VarType::Num(n) => *n
         }
-        if var.starts_with("global.") {
-            return Ok(VarType::Global(var.to_string()));
-        }
-        if var.contains(".") {
-            Err(std::io::Error::other(format!("invalid variable prefix given: {}", var)))?;
-        }
-        if let Ok(n) = var.parse::<i16>() {
-            return Ok(VarType::Num(n))
-        }
-        Self::parse_stat(var)
     }
 
+    pub fn get_mut<'a>(&self, locals: &'a mut VarMap, globals: &'a mut VarMap) -> Option<&'a mut i16> {
+        match self {
+            VarType::Global(k) => Some(globals.entry(k.clone()).or_insert(0)),
+            VarType::Local(k) => Some(locals.entry(k.clone()).or_insert(0)),
+            VarType::Stat(k) => None,
+            VarType::Num(n) => None,
+        }
+    }
+}
+
+#[derive(Debug)]
+pub struct Condition(Vec<Check>);
+
+impl Condition {
     fn parse_condition(condition: &str) -> Result<Check, Box<dyn std::error::Error>> {
         const OPERATORS: [(&str, Op); 6] = [
             (">=", Op::Ge),
@@ -170,8 +182,8 @@ impl Condition {
                 Some((var_1, op, var_2))
             }).ok_or(std::io::Error::other("failed on parsing"))?;
 
-            let var_1 = Self::parse_variable(var_1.trim())?;
-            let var_2 = Self::parse_variable(var_2.trim())?;
+            let var_1 = VarType::from_str(var_1.trim())?;
+            let var_2 = VarType::from_str(var_2.trim())?;
 
             Ok(Check {
                 var_1,
@@ -196,7 +208,7 @@ impl Condition {
 }
 
 // Assignment operators
-#[derive(Debug)]
+#[derive(Debug, Clone)]
 enum Ao { Assign, Add, Sub, Mul, Div }
 
 #[derive(Debug)]
@@ -204,4 +216,53 @@ pub struct Effect {
     var_1: VarType,
     operation: Ao,
     var_2: VarType,
+}
+
+impl Effect {
+    fn parse_effect(effect_src: &String) -> Result<Self, Box<dyn std::error::Error>> {
+        const OPERATORS: [(&str, Ao); 5] = [
+            ("=", Ao::Assign),
+            ("+=", Ao::Add),
+            ("-=", Ao::Sub),
+            ("*=", Ao::Mul),
+            ("/=", Ao::Div),
+        ];
+
+        let (var_1, ao, var_2) = OPERATORS.iter()
+            .find_map(|(operator, ao)| {
+                let (var_1, var_2) = effect_src.split_once(operator)?;
+                Some((var_1, ao, var_2))
+            }).ok_or(std::io::Error::other("failed on parsing"))?;
+
+            let var_1 = VarType::from_str(var_1.trim())?;
+            let var_2 = VarType::from_str(var_2.trim())?;
+
+            Ok(Self {
+                var_1,
+                operation: ao.clone(),
+                var_2
+            })
+    }
+
+    pub fn parse(effects_src: &Vec<String>) -> Result<Vec<Effect>, Box<dyn std::error::Error>>{
+        let parsed: Vec<Effect> = effects_src.into_iter()
+        .map(Self::parse_effect)
+        .collect::<Result<_, _>>()?;
+        Ok(parsed)
+    }
+
+    pub fn apply(&self, player: &Player, locals: &mut VarMap, globals: &mut VarMap) -> Result<(), Box<dyn std::error::Error>> {
+        let var_2 = self.var_2.get(player, locals, globals);
+        let var_1 = self.var_1.get_mut(locals, globals)
+        .ok_or_else(|| std::io::Error::other("cannot assign to a stat or number"))?;
+
+        match self.operation {
+            Ao::Assign => *var_1 = var_2,
+            Ao::Add => *var_1 += var_2,
+            Ao::Sub => *var_1 -= var_2,
+            Ao::Mul => *var_1 *= var_2,
+            Ao::Div => *var_1 /= var_2,
+        }
+        Ok(())
+    }
 }

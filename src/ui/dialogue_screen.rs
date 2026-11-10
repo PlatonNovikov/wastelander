@@ -83,6 +83,10 @@ impl Screen for DialogueScreen {
                     }
                 }
 
+                for effect in (&answer.effects).into_iter() {
+                    let _ = effect.apply(game.player.as_ref().unwrap(), &mut self.locals, &mut game.globals);
+                }
+
                 if answer.end {
                     return ScreenReturn::PopScreen;
                 }
