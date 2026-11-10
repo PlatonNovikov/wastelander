@@ -35,9 +35,13 @@ pub struct Answer {
 
     #[serde(default, rename = "condition")]
     condition_src: Option<String>,
-
     #[serde(skip)]
     pub condition: Option<Condition>,
+
+    #[serde(default, rename = "set")]
+    effects_src: Vec<String>,
+    #[serde(skip)]
+    pub effects: Vec<Effect>,
 }
 
 pub fn load_dialogue(dialogue_file: &str) -> Result<Dialogue, Box<dyn std::error::Error>> {
@@ -62,47 +66,32 @@ enum Op { Gt, Ge, Lt, Le, Eq, Ne }
 
 #[derive(Debug)]
 struct Check {
-    var: VarType,
+    var_1: VarType,
     op: Op,
-    value: i16,
+    var_2: VarType,
 }
 
 impl Check {
-    fn get_var(&self, player: &Player, l_scope: &mut VarMap, g_scope: &mut VarMap) -> i16 {
-        match self.var {
-            VarType::Global(ref var_key) => {
-                match g_scope.get(var_key.as_str()) {
-                    None => {
-                        g_scope.insert(var_key.clone(), 0).unwrap()
-                    }
-                    Some(val) => *val
-                }
-            },
-
-            VarType::Local(ref var_key) => {
-                match l_scope.get(var_key.as_str()) {
-                    None => {
-                        l_scope.insert(var_key.clone(), 0).unwrap()
-                    }
-                    Some(val) => *val
-                }
-            },
-            
-            VarType::Stat(ref var_key) => {
-                player.stat_str(var_key.as_str()).unwrap()
-            },
+    fn get_var(var: &VarType, player: &Player, locals: &mut VarMap, globals: &mut VarMap) -> i16 {
+        match var {
+            VarType::Global(k) => globals.get(k).copied().unwrap_or(0),
+            VarType::Local(k) => locals.get(k).copied().unwrap_or(0),
+            VarType::Stat(k) => player.stat_str(k.as_str()).unwrap(), // already validated
+            VarType::Num(n) => *n
         }
     }
 
-    pub fn check(&self, player: &Player, l_scope: &mut VarMap, g_scope: &mut VarMap) -> bool {
-        let stat = self.get_var(player, l_scope, g_scope);
+    pub fn check(&self, player: &Player, locals: &mut VarMap, globals: &mut VarMap) -> bool {
+        let var_1 = Self::get_var(&self.var_1, player, locals, globals);
+        let var_2 = Self::get_var(&self.var_2, player, locals, globals);
+
         match self.op {
-            Op::Gt => stat > self.value,
-            Op::Ge => stat >= self.value,
-            Op::Lt => stat < self.value,
-            Op::Le => stat <= self.value,
-            Op::Eq => stat == self.value,
-            Op::Ne => stat != self.value,
+            Op::Gt => var_1 > var_2,
+            Op::Ge => var_1 >= var_2,
+            Op::Lt => var_1 < var_2,
+            Op::Le => var_1 <= var_2,
+            Op::Eq => var_1 == var_2,
+            Op::Ne => var_1 != var_2,
         }
     }
 }
@@ -112,6 +101,7 @@ enum VarType {
     Stat(String),
     Local(String),
     Global(String),
+    Num(i16),
 }
 
 #[derive(Debug)]
@@ -158,6 +148,9 @@ impl Condition {
         if var.contains(".") {
             Err(std::io::Error::other(format!("invalid variable prefix given: {}", var)))?;
         }
+        if let Ok(n) = var.parse::<i16>() {
+            return Ok(VarType::Num(n))
+        }
         Self::parse_stat(var)
     }
 
@@ -171,18 +164,19 @@ impl Condition {
             ("<", Op::Lt),
         ];
 
-        let (var, op, value) = OPERATORS.iter()
+        let (var_1, op, var_2) = OPERATORS.iter()
             .find_map(|(operator, op)| {
-                let (var, value) = condition.split_once(operator)?;
-                Some((var, op, value))
+                let (var_1, var_2) = condition.split_once(operator)?;
+                Some((var_1, op, var_2))
             }).ok_or(std::io::Error::other("failed on parsing"))?;
 
-            let var = Self::parse_variable(var.trim())?;
+            let var_1 = Self::parse_variable(var_1.trim())?;
+            let var_2 = Self::parse_variable(var_2.trim())?;
 
             Ok(Check {
-                var,
+                var_1,
                 op: op.clone(),
-                value: value.trim().parse()?
+                var_2
             })
     }
 
@@ -193,10 +187,21 @@ impl Condition {
         Ok(Condition(parsed))
     }
 
-    pub fn check(&self, player: &Player, l_scope: &mut VarMap, g_scope: &mut VarMap) -> bool {
+    pub fn check(&self, player: &Player, locals: &mut VarMap, globals: &mut VarMap) -> bool {
         !self.0.iter()
-        .map(|check| check.check(player, l_scope, g_scope))
+        .map(|check| check.check(player, locals, globals))
         .collect::<Vec<bool>>()
         .contains(&false)
     }
+}
+
+// Assignment operators
+#[derive(Debug)]
+enum Ao { Assign, Add, Sub, Mul, Div }
+
+#[derive(Debug)]
+pub struct Effect {
+    var_1: VarType,
+    operation: Ao,
+    var_2: VarType,
 }

@@ -1,11 +1,12 @@
 ### This explanation is pretty poorly written, so it’s best to just use the existing dialogues as examples.
-# How to write dialogues?
+# GHDL - gkfnjy's horrible dialogue language
 
 A dialogue must begin with a `start` node. The text for a node is specified using the `text` parameter. Responses are defined within a sub-node called `<parent_node>.answers`, which includes the following parameters:
 
 * `text` (required) — the text of the response.
 * `next` (required if `end` is not defined) — the name of the next node.
 * `condition` — the condition under which this response becomes available. It must be specified in the format `<variable> <comparison_operator> <number/bool>` (this can be followed by further logical comparisons with additional conditions). Conditions are evaluated in the order they are listed.
+* `set` - assignment of a variable. It must be specified in the format `<variable> <assignment_operator> <number/bool>`.
 * `end` — if the dialogue should conclude after this response, this must be set to `true`.
 
 ## Variables
