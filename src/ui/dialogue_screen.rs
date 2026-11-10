@@ -78,13 +78,13 @@ impl Screen for DialogueScreen {
                 };
 
                 if let Some(check) = &answer.condition {
-                    if !check.check(game.player.as_ref().unwrap(), &mut self.locals, &mut game.globals) {
+                    if check.calc(game.player.as_ref().unwrap(), &mut self.locals, &mut game.globals).unwrap() == 0 {
                         return ScreenReturn::None;
                     }
                 }
 
                 for effect in (&answer.effects).into_iter() {
-                    let _ = effect.apply(game.player.as_ref().unwrap(), &mut self.locals, &mut game.globals);
+                    let _ = effect.calc(game.player.as_ref().unwrap(), &mut self.locals, &mut game.globals);
                 }
 
                 if answer.end {
