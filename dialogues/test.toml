@@ -20,8 +20,13 @@ text = "Hello! I'm a dummy! :D"
     next = "insane"
 
     [[start.answers]]
-    text = "this option is only avalable if you chose the strength check first"
+    text = "this option is only avalable if you chose the strength check at one time"
     condition = "local.strong == 1"
+    end = true
+    
+    [[start.answers]]
+    text = "this one is only avalable if you chose the strength check at least five times plus all of the conditions from the third answer"
+    condition = "local.strong >= 5 && (perception < 3 && agility == 2 && m_weapons >= 20)"
     end = true
 
 # -------------------------------------
@@ -54,7 +59,7 @@ text = "wow"
 
     [[strength.answers]]
     text = "..."
-    set = ["local.strong = 1"]
+    set = ["local.strong += 1"]
     next = "start"
 
 # -------------------------------------
