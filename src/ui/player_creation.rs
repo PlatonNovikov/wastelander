@@ -1,12 +1,7 @@
-use crossterm::event::{self, Event, KeyCode, KeyEvent, KeyEventKind, KeyModifiers};
+use crossterm::event::{KeyCode, KeyEvent, KeyModifiers};
 use ratatui::{
-    buffer::Buffer,
-    layout::Rect,
-    style::Stylize,
-    symbols::border,
-    text::{Line, Text},
-    widgets::{Block, Paragraph, Widget, Borders, List, ListItem},
-    DefaultTerminal, Frame,
+    widgets::{Block, Paragraph, Borders, List, ListItem},
+    Frame,
 };
 
 use super::{Screen, ScreenReturn};
@@ -25,7 +20,6 @@ enum SubScreenResult {
 pub struct PlayerCreation {
     name: String,
     special: Special,
-    skills: Skills,
     submenu: Box<dyn SubScreen<SubScreenResult>>,
 }
 
@@ -34,7 +28,6 @@ impl Default for PlayerCreation {
         Self {
             name: String::new(),
             special: Special::default(),
-            skills: Skills::default(),
             submenu: Box::new(NameCreation::default()),
         }
     }

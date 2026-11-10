@@ -1,4 +1,4 @@
-use ratatui::{DefaultTerminal, Frame};
+use ratatui;
 
 mod ui;
 mod app;

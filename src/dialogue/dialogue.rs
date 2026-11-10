@@ -19,9 +19,6 @@ pub struct Node {
 
     #[serde(default)]
     pub answers: Vec<Answer>,
-
-    #[serde(default)]
-    pub end: bool,
 }
 
 #[derive(Debug, Deserialize)]
@@ -156,8 +153,8 @@ impl VarType {
         match self {
             VarType::Global(k) => Some(globals.entry(k.clone()).or_insert(0)),
             VarType::Local(k) => Some(locals.entry(k.clone()).or_insert(0)),
-            VarType::Stat(k) => None,
-            VarType::Num(n) => None,
+            VarType::Stat(_) => None,
+            VarType::Num(_) => None,
         }
     }
 }

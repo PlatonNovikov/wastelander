@@ -1,19 +1,12 @@
 use std::{io, process::exit};
 
-use crossterm::event::{self, Event, KeyCode, KeyEvent, KeyEventKind};
+use crossterm::event::{self, Event, KeyEventKind};
 use ratatui::{
-    buffer::Buffer,
-    layout::Rect,
-    style::Stylize,
-    symbols::border,
-    text::{Line, Text},
-    widgets::{Block, Paragraph, Widget},
-    DefaultTerminal, Frame,
+    DefaultTerminal,
 };
 
-use crate::game::{Game, Player};
-use crate::ui::{Screen, PlayerCreation, ScreenReturn, MainMenu, DialogueScreen};
-use crate::dialogue::{Dialogue, load_dialogue};
+use crate::game::{Game};
+use crate::ui::{Screen, ScreenReturn, MainMenu};
 
 pub struct App {
     game: Game,

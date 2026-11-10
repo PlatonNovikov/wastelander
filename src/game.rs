@@ -1,5 +1,4 @@
 use std::collections::HashMap;
-use toml::Value;
 
 pub type VarMap = HashMap<String, i16>;
 
