@@ -2,10 +2,21 @@ use std::collections::HashMap;
 
 pub type VarMap = HashMap<String, i16>;
 
-#[derive(Default)]
 pub struct Game {
     pub player: Option<Player>,
     pub globals: VarMap,
+
+	pub hide_checks: bool
+}
+
+impl Default for Game {
+	fn default() -> Self {
+		Self {
+			player: None,
+			globals: HashMap::new(),
+			hide_checks: true,
+		}
+	}
 }
 
 #[derive(Copy, Clone)]

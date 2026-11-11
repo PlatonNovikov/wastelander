@@ -55,7 +55,7 @@ impl Screen for PlayerCreation {
                     special: self.special,
                     skills
                 });
-                let next = Box::new(DialogueScreen::new("dialogues/test.toml"));
+                let next = Box::new(DialogueScreen::new("dialogues/test.toml", game));
                 return ScreenReturn::ReplaceScreen(next);
             }
         }

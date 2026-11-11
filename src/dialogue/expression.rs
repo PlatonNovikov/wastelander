@@ -5,7 +5,7 @@ use crate::{
 };
 
 #[derive(Debug, Clone, Copy, PartialEq)]
-enum Op {
+pub enum Op {
     Or, And,
     Eq, Ne, Gt, Ge, Lt, Le,
     Add, Sub, Mul, Div,
@@ -159,7 +159,7 @@ fn tokenize(src: &str) -> Result<Vec<Token>, Box<dyn std::error::Error>> {
 }
 
 #[derive(Debug, PartialEq)]
-enum VarType {
+pub enum VarType {
     Stat(String),
     Local(String),
     Global(String),
@@ -255,13 +255,13 @@ impl Expression {
         Err(std::io::Error::other("").into())
     }
 
-    pub fn calc(&self, player: &Player, locals: &mut VarMap, globals: &mut VarMap) -> Result<i16, Box<dyn std::error::Error>> {
+    pub fn calc_mut(&self, player: &Player, locals: &mut VarMap, globals: &mut VarMap) -> Result<i16, Box<dyn std::error::Error>> {
         Ok(match self {
             Expression::Var(var) => var.get(player, locals, globals),
-            Expression::Neg(e) => e.calc(player, locals, globals)? * -1,
+            Expression::Neg(e) => e.calc_mut(player, locals, globals)? * -1,
             Expression::Binary(e1, op , e2) => {
-                let c1 = e1.calc(player, locals, globals)?;
-                let c2 = e2.calc(player, locals, globals)?;
+                let c1 = e1.calc_mut(player, locals, globals)?;
+                let c2 = e2.calc_mut(player, locals, globals)?;
                 match op {
                     Op::Or => ((c1 != 0) || (c2 != 0)) as i16,
                     Op::And => ((c1 != 0) && (c2 != 0)) as i16,
@@ -283,6 +283,12 @@ impl Expression {
                 }
             }
         })
+    }
+
+    pub fn calc_immut(&self, player: &Player, locals: &VarMap, globals: &VarMap) -> Result<i16, Box<dyn std::error::Error>>{
+        let mut locals = locals.clone();
+        let mut globals = globals.clone();
+        self.calc_mut(player, &mut locals, &mut globals)
     }
 
     pub fn parse(src: &str) -> Result<Self, Box<dyn std::error::Error>> {

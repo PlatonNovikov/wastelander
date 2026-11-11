@@ -9,9 +9,7 @@ use ratatui::{
     Frame
 };
 
-use crate::{
-    dialogue::{Dialogue, Node, load_dialogue}
-};
+use crate::dialogue::{self, Answer, Dialogue, Node, load_dialogue};
 use crate::game::{Game, VarMap};
 
 use super::{Screen, ScreenReturn};
@@ -22,11 +20,24 @@ pub struct DialogueScreen {
     selected: usize,
     // local variables of this dialogue screen
     locals: VarMap,
+    sorted_answers: Vec<usize>,
 }
 
 impl Screen for DialogueScreen {
-    fn draw(&self, frame: &mut Frame, _game: &Game) {
+    fn draw(&self, frame: &mut Frame, game: &Game) {
         let node = self.current_node();
+        let answers: Vec<&Answer>;
+        if game.hide_checks {
+            answers = self.sorted_answers
+            .iter()
+            .filter_map(
+                |a| 
+                node.answers.get(*a)
+            )
+            .collect();
+        } else {
+            answers = node.answers.iter().collect();
+        }
 
         let block = Block::default().title("Dialogue").borders(Borders::ALL);
         let inner = block.inner(frame.area());
@@ -34,7 +45,7 @@ impl Screen for DialogueScreen {
 
         let [text_area, answers_area] = Layout::vertical([
             Constraint::Min(3),
-            Constraint::Length(node.answers.len().max(1) as u16 + 1),
+            Constraint::Length(answers.len().max(1) as u16 + 1),
         ])
         .areas(inner);
 
@@ -42,11 +53,12 @@ impl Screen for DialogueScreen {
         frame.render_widget(text, text_area);
 
         let lines: Vec<Line> = std::iter::once(Line::raw(""))
-            .chain(node.answers.iter().enumerate().map(|(i, a)| {
+            .chain(answers.iter().enumerate().map(|(i, a)| {
+                let text = &a.text;
                 if i == self.selected {
-                    Line::styled(format!("> {}", a.text), Style::new().add_modifier(Modifier::BOLD))
+                    Line::styled(format!("> {}", text), Style::new().add_modifier(Modifier::BOLD))
                 } else {
-                    Line::raw(format!("  {}", a.text))
+                    Line::raw(format!("  {}", text))
                 }
             }))
             .collect();
@@ -55,9 +67,18 @@ impl Screen for DialogueScreen {
     }
 
     fn handle_input(&mut self, key: KeyEvent, game: &mut Game) -> ScreenReturn {
-        let answers_len = self.current_node().answers.len();
+        let answers_len = self.sorted_answers.len();
+        let node = self.dialogue.nodes.get(&self.current).unwrap();
+        let Some(answer) = node.answers.get(self.sorted_answers[self.selected])
+        else {
+            return ScreenReturn::PopScreen;
+        };
 
         match key.code {
+            KeyCode::Char('h') => {
+                game.hide_checks = !game.hide_checks;
+            }
+
             KeyCode::Down => {
                 if self.selected + 1 < answers_len {
                     self.selected += 1;
@@ -71,20 +92,8 @@ impl Screen for DialogueScreen {
             }
 
             KeyCode::Enter => {
-                let node = self.dialogue.nodes.get(&self.current).unwrap();
-                let Some(answer) = node.answers.get(self.selected)
-                else {
-                    return ScreenReturn::PopScreen;
-                };
-
-                if let Some(check) = &answer.condition {
-                    if check.calc(game.player.as_ref().unwrap(), &mut self.locals, &mut game.globals).unwrap() == 0 {
-                        return ScreenReturn::None;
-                    }
-                }
-
                 for effect in (&answer.effects).into_iter() {
-                    let _ = effect.calc(game.player.as_ref().unwrap(), &mut self.locals, &mut game.globals);
+                    let _ = effect.calc_mut(game.player.as_ref().unwrap(), &mut self.locals, &mut game.globals);
                 }
 
                 if answer.end {
@@ -94,6 +103,7 @@ impl Screen for DialogueScreen {
                 if let Some(next) = &answer.next {
                     self.current = next.clone();
                     self.selected = 0;
+                    let _ = self.sort_answers(game);
                 }
             }
 
@@ -105,17 +115,38 @@ impl Screen for DialogueScreen {
 }
 
 impl DialogueScreen {
-    pub fn new(dialogue_file: &str) -> Self {
+    pub fn new(dialogue_file: &str, game: &mut Game) -> Self {
         let dialogue = load_dialogue(dialogue_file).unwrap();
-        Self { 
+        let mut screen = Self { 
             dialogue,
             current: String::from("start"),
             selected: 0,
             locals: HashMap::new(),
-        }
+            sorted_answers: Vec::new(),
+        };
+        screen.sort_answers(game);
+        screen
     }
 
     fn current_node(&self) -> &Node {
         self.dialogue.nodes.get(&self.current).unwrap()
+    }
+
+    fn sort_answers(&mut self, game: &Game) -> Result<(), Box<dyn std::error::Error>> {
+        let answers = &self.current_node().answers;
+        let mut visible = Vec::new();
+        for (i, answer) in answers.iter().enumerate() {
+            let ok = match &answer.condition {
+                Some(cond) => cond.calc_immut(&game.player.as_ref().unwrap(), &self.locals, &game.globals)? != 0,
+                None => true,
+            };
+            if ok {
+                visible.push(i);
+            }
+        }
+
+        self.sorted_answers = visible;
+
+        Ok(())
     }
 }

@@ -20,7 +20,7 @@ text = "Hello! I'm a dummy! :D"
     next = "insane"
 
     [[start.answers]]
-    text = "this option is only avalable if you chose the strength check at one time"
+    text = "this option is only avalable if you chose the strength check one time"
     condition = "local.strong == 1"
     end = true
     
