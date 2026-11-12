@@ -5,8 +5,7 @@ A dialogue must begin with a `start` node. The text for a node is specified usin
 
 * `text` (required) — the text of the response.
 * `next` (required if `end` is not defined) — the name of the next node.
-* `condition` — the condition under which this response becomes available. Contains a single expression. The response becomes available if the expression is non-zero. The expression is executed after an answer is selected. For example, if the expression is `[condition] = "global.variable += 1"`
-then one will be added to `global.variable` only once this answer has been chosen.
+* `condition` — the condition under which this response becomes available. Contains a single expression. The response becomes available if the expression is non-zero. The expression is executed after an answer is selected. For example, if the expression is `condition = "global.variable += 1"` then one will be added to `global.variable` only once this answer has been chosen.
 * `set` - Contains a list of sequentially executed `expression`. Executed after an answer is selected.
 * `end` — if the dialogue should conclude after this response, this must be set to `true`.
 
@@ -19,9 +18,10 @@ All operations have the same priority and are performed sequentially. Parenthese
 The following operations exist:
 
 #### Logical
-Logical operations use 0 as false and any non-zero value as true. They return 0 if false, or 1 if true
 * `||` - or
 * `&&` - and
+
+Logical operations use 0 as false and any non-zero value as true. They return 0 if false, or 1 if true
 
 #### Numerical
 * `==` - equal
@@ -43,6 +43,17 @@ Logical operations use 0 as false and any non-zero value as true. They return 0 
 * `-=`
 * `*=`
 * `/=`
+
+Assignment operators return the assigned value.
+For example, provided that the `local.var` is equal to zero
+```
+condition = "(local.var += 5) + (local.var -= 3)"
+```
+will become
+```
+condition = "(0 + 5) + (5 - 3)"
+```
+and will return `7`
 
 ### Variables
 
