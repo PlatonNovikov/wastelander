@@ -112,7 +112,7 @@ impl Screen for DialogueScreen {
 impl DialogueScreen {
     pub fn new(dialogue_file: &str, game: &mut Game) -> Self {
         let dialogue = load_dialogue(dialogue_file).unwrap();
-        let mut screen = Self { 
+        let mut screen = Self {
             dialogue,
             current: String::from("start"),
             selected: 0,
@@ -147,9 +147,9 @@ impl DialogueScreen {
 
     fn displayed(&self, game: &Game) -> Vec<usize> {
         if game.hide_checks == true {
-            (0..self.current_node().answers.len()).collect()
-        } else {
             self.sorted_answers.clone()
+        } else {
+            (0..self.current_node().answers.len()).collect()
         }
     }
 }
