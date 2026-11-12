@@ -9,7 +9,7 @@ use ratatui::{
     Frame
 };
 
-use crate::dialogue::{self, Answer, Dialogue, Node, load_dialogue};
+use crate::dialogue::{Dialogue, Node, load_dialogue};
 use crate::game::{Game, VarMap};
 
 use super::{Screen, ScreenReturn};
@@ -26,7 +26,7 @@ pub struct DialogueScreen {
 impl Screen for DialogueScreen {
     fn draw(&self, frame: &mut Frame, game: &Game) {
         let node = self.current_node();
-        let answers= self.list_answers(game);
+        let displayed= self.displayed(game);
 
         let block = Block::default().title("Dialogue").borders(Borders::ALL);
         let inner = block.inner(frame.area());
@@ -34,7 +34,7 @@ impl Screen for DialogueScreen {
 
         let [text_area, answers_area] = Layout::vertical([
             Constraint::Min(3),
-            Constraint::Length(answers.len().max(1) as u16 + 1),
+            Constraint::Length(displayed.len().max(1) as u16 + 1),
         ])
         .areas(inner);
 
@@ -42,12 +42,18 @@ impl Screen for DialogueScreen {
         frame.render_widget(text, text_area);
 
         let lines: Vec<Line> = std::iter::once(Line::raw(""))
-            .chain(answers.iter().enumerate().map(|(i, a)| {
-                let text = &node.answers[*a].text;
-                if i == answers[self.selected] {
-                    Line::styled(format!("> {}", text), Style::new().add_modifier(Modifier::BOLD))
+            .chain(displayed.iter().enumerate().map(|(i, &idx)| {
+                let text = &node.answers[idx].text;
+
+                let mut style = Style::new();
+                if !self.sorted_answers.contains(&idx) {
+                    style = style.add_modifier(Modifier::DIM);
+                }
+
+                if i == self.sorted_answers[self.selected] {
+                    Line::styled(format!("> {}", text), style.add_modifier(Modifier::BOLD))
                 } else {
-                    Line::raw(format!("  {}", text))
+                    Line::styled(format!("  {}", text), style)
                 }
             }))
             .collect();
@@ -139,7 +145,7 @@ impl DialogueScreen {
         Ok(())
     }
 
-    fn list_answers(&self, game: &Game) -> Vec<usize> {
+    fn displayed(&self, game: &Game) -> Vec<usize> {
         if game.hide_checks == true {
             (0..self.current_node().answers.len()).collect()
         } else {
