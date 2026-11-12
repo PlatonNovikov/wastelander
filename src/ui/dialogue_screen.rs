@@ -26,18 +26,7 @@ pub struct DialogueScreen {
 impl Screen for DialogueScreen {
     fn draw(&self, frame: &mut Frame, game: &Game) {
         let node = self.current_node();
-        let answers: Vec<&Answer>;
-        if game.hide_checks {
-            answers = self.sorted_answers
-            .iter()
-            .filter_map(
-                |a| 
-                node.answers.get(*a)
-            )
-            .collect();
-        } else {
-            answers = node.answers.iter().collect();
-        }
+        let answers= self.list_answers(game);
 
         let block = Block::default().title("Dialogue").borders(Borders::ALL);
         let inner = block.inner(frame.area());
@@ -54,8 +43,8 @@ impl Screen for DialogueScreen {
 
         let lines: Vec<Line> = std::iter::once(Line::raw(""))
             .chain(answers.iter().enumerate().map(|(i, a)| {
-                let text = &a.text;
-                if i == self.selected {
+                let text = &node.answers[*a].text;
+                if i == answers[self.selected] {
                     Line::styled(format!("> {}", text), Style::new().add_modifier(Modifier::BOLD))
                 } else {
                     Line::raw(format!("  {}", text))
@@ -124,7 +113,7 @@ impl DialogueScreen {
             locals: HashMap::new(),
             sorted_answers: Vec::new(),
         };
-        screen.sort_answers(game);
+        let _ = screen.sort_answers(game);
         screen
     }
 
@@ -148,5 +137,13 @@ impl DialogueScreen {
         self.sorted_answers = visible;
 
         Ok(())
+    }
+
+    fn list_answers(&self, game: &Game) -> Vec<usize> {
+        if game.hide_checks == true {
+            (0..self.current_node().answers.len()).collect()
+        } else {
+            self.sorted_answers.clone()
+        }
     }
 }
