@@ -132,7 +132,7 @@ impl DialogueScreen {
         let mut visible = Vec::new();
         for (i, answer) in answers.iter().enumerate() {
             let ok = match &answer.condition {
-                Some(cond) => cond.calc_immut(&game.player.as_ref().unwrap(), &self.locals, &game.globals)? != 0,
+                Some(cond) => cond.calc_immut(&game.player.as_ref().unwrap(), &self.locals, &game.globals)?.truthy(),
                 None => true,
             };
             if ok {

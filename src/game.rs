@@ -1,6 +1,8 @@
 use std::collections::HashMap;
 
-pub type VarMap = HashMap<String, i16>;
+use crate::dialogue::ValType;
+
+pub type VarMap = HashMap<String, ValType>;
 
 pub struct Game {
     pub player: Option<Player>,
