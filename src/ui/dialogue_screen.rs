@@ -21,6 +21,8 @@ pub struct DialogueScreen {
     // local variables of this dialogue screen
     locals: VarMap,
     sorted_answers: Vec<usize>,
+    main_text_render: String,
+    answer_text_render: Vec<String>,
 }
 
 impl Screen for DialogueScreen {
@@ -38,7 +40,7 @@ impl Screen for DialogueScreen {
         ])
         .areas(inner);
 
-        let text = Paragraph::new(node.text.as_str()).wrap(Wrap { trim: true });
+        let text = Paragraph::new(self.main_text_render.as_str()).wrap(Wrap { trim: true });
         frame.render_widget(text, text_area);
 
         let lines: Vec<Line> = std::iter::once(Line::raw(""))
@@ -51,9 +53,9 @@ impl Screen for DialogueScreen {
                 }
 
                 if i == self.sorted_answers[self.selected] {
-                    Line::styled(format!("> {}", text), style.add_modifier(Modifier::BOLD))
+                    Line::styled(format!("> {}", self.answer_text_render[i]), style.add_modifier(Modifier::BOLD))
                 } else {
-                    Line::styled(format!("  {}", text), style)
+                    Line::styled(format!("  {}", self.answer_text_render[i]), style)
                 }
             }))
             .collect();
@@ -99,6 +101,7 @@ impl Screen for DialogueScreen {
                     self.current = next.clone();
                     self.selected = 0;
                     let _ = self.sort_answers(game);
+                    self.render_text(game);
                 }
             }
 
@@ -118,8 +121,11 @@ impl DialogueScreen {
             selected: 0,
             locals: HashMap::new(),
             sorted_answers: Vec::new(),
+            main_text_render: String::new(),
+            answer_text_render: Vec::new(),
         };
         let _ = screen.sort_answers(game);
+        screen.render_text(game);
         screen
     }
 
@@ -151,5 +157,20 @@ impl DialogueScreen {
         } else {
             (0..self.current_node().answers.len()).collect()
         }
+    }
+
+    fn render_text(&mut self, game: &Game) {
+        let player = game.player.as_ref().unwrap();
+        let node = self.current_node();
+
+        let main = node.text.render(player, &self.locals, &game.globals);
+        let answers: Vec<String> = self
+            .sorted_answers
+            .iter()
+            .map(|&i| node.answers[i].text.render(player, &self.locals, &game.globals))
+            .collect();
+        
+        self.main_text_render = main;
+        self.answer_text_render = answers;
     }
 }

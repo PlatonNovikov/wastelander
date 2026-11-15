@@ -3,7 +3,10 @@ use std::collections::HashMap;
 
 use serde::Deserialize;
 
-use super::expression::{Expression};
+use super::{
+    expression::{Expression},
+    format::Template,
+};
 
 #[derive(Debug, Deserialize)]
 pub struct Dialogue {
@@ -13,7 +16,7 @@ pub struct Dialogue {
 
 #[derive(Debug, Deserialize)]
 pub struct Node {
-    pub text: String,
+    pub text: Template,
 
     #[serde(default)]
     pub answers: Vec<Answer>,
@@ -21,7 +24,7 @@ pub struct Node {
 
 #[derive(Debug, Deserialize)]
 pub struct Answer {
-    pub text: String,
+    pub text: Template,
 
     pub next: Option<String>,
 
